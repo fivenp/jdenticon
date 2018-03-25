@@ -1,28 +1,28 @@
 /**
  * Jdenticon 2.0.0
  * http://jdenticon.com
- *  
- * Built: 2018-03-12T19:39:43.855Z
+ *
+ * Built: 2018-03-25T20:04:07.073Z
  *
  * Copyright (c) 2014-2018 Daniel Mester Pirttijärvi
  *
- * Permission is hereby granted, free of charge, to any person obtaining 
- * a copy of this software and associated documentation files (the 
- * "Software"), to deal in the Software without restriction, including 
- * without limitation the rights to use, copy, modify, merge, publish, 
- * distribute, sublicense, and/or sell copies of the Software, and to 
- * permit persons to whom the Software is furnished to do so, subject to 
+ * Permission is hereby granted, free of charge, to any person obtaining
+ * a copy of this software and associated documentation files (the
+ * "Software"), to deal in the Software without restriction, including
+ * without limitation the rights to use, copy, modify, merge, publish,
+ * distribute, sublicense, and/or sell copies of the Software, and to
+ * permit persons to whom the Software is furnished to do so, subject to
  * the following conditions:
- * 
- * The above copyright notice and this permission notice shall be 
+ *
+ * The above copyright notice and this permission notice shall be
  * included in all copies or substantial portions of the Software.
- * 
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, 
- * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
- * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
- * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
- * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
- * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+ * IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+ * CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+ * TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
  * SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
@@ -56,19 +56,19 @@ function SvgElement(element) {
     // Don't use the clientWidth and clientHeight properties on SVG elements
     // since Firefox won't serve a proper value of these properties on SVG
     // elements (https://bugzilla.mozilla.org/show_bug.cgi?id=874811)
-    // Instead use 100px as a hardcoded size (the svg viewBox will rescale 
+    // Instead use 100px as a hardcoded size (the svg viewBox will rescale
     // the icon to the correct dimensions)
     this.size = Math.min(
         (Number(element.getAttribute("width")) || 100),
         (Number(element.getAttribute("height")) || 100)
         );
     this._el = element;
-    
+
     // Clear current SVG child elements
     while (element.firstChild) {
         element.removeChild(element.firstChild);
     }
-    
+
     // Set viewBox attribute to ensure the svg scales nicely.
     element.setAttribute("viewBox", "0 0 " + this.size + " " + this.size);
     element.setAttribute("preserveAspectRatio", "xMidYMid meet");
@@ -105,8 +105,51 @@ SvgElement.prototype = {
 
 
 /**
+ * Renderer producing SVG output.
+ * @private
+ * @constructor
+ */
+function SvgWriter(size) {
+    this.size = size;
+    this._s =
+        '<svg xmlns="http://www.w3.org/2000/svg" width="' +
+        size + '" height="' + size + '" viewBox="0 0 ' +
+        size + ' ' + size + '" preserveAspectRatio="xMidYMid meet">';
+}
+SvgWriter.prototype = {
+    /**
+     * Fills the background with the specified color.
+     * @param {string} fillColor  Fill color on the format #rrggbb.
+     * @param {number} opacity  Opacity in the range [0.0, 1.0].
+     */
+    setBackground: function (fillColor, opacity) {
+        if (opacity) {
+            this._s += '<rect width="100%" height="100%" fill="' +
+                fillColor + '" opacity="' + opacity.toFixed(2) + '"/>';
+        }
+    },
+    /**
+     * Writes a path to the SVG string.
+     * @param {string} color Fill color on format #rrggbb.
+     * @param {string} dataString The SVG path data string.
+     */
+    append: function (color, dataString) {
+        this._s +=
+            '<path fill="' + color + '" d="' + dataString + '"/>';
+    },
+    /**
+     * Gets the rendered image as an SVG string.
+     */
+    toString: function () {
+        return this._s + "</svg>";
+    }
+};
+
+
+
+/**
  * Computes a SHA1 hash for any value and returns it as a hexadecimal string.
- * @param {any} message 
+ * @param {any} message
  */
 function sha1(message) {
     /**
@@ -117,7 +160,7 @@ function sha1(message) {
         var hashOctets = [];
         for (var i = 0; i < words.length; i++) {
             var val = words[i];
-           
+
             for (var shift = 28; shift >= 0; shift -= 4) {
                 var octet = (val >>> shift) & 0xf;
                 hashOctets.push(octet.toString(16));
@@ -126,7 +169,7 @@ function sha1(message) {
 
         return hashOctets.join("");
     }
-    
+
     /**
      * Converts the specified message to a sequence of UTF8 encoded and padded 64 byte blocks.
      * @param {any} message  Any value that will be padded to 64 byte blocks.
@@ -157,17 +200,17 @@ function sha1(message) {
 
         // Trailing '1' bit
         binaryMessage[binaryMessageLength++] = 0x80;
-        
+
         function getWordBlock(startIndex, byteCount) {
             var words = [];
             var wordIndex = -1;
-            
+
             for (var i = 0; i < byteCount; i++) {
                 wordIndex = (i / 4) | 0;
                 words[wordIndex] = (words[wordIndex] || 0) +
                     (binaryMessage[startIndex + i] << ((3 - (i & 3)) * 8));
             }
-            
+
             while (++wordIndex < BLOCK_SIZE_WORDS) {
                 words[wordIndex] = 0;
             }
@@ -183,10 +226,10 @@ function sha1(message) {
         // Final block(s)
         // Rest of message
         var lastBlockDataLength = binaryMessageLength - i;
-        
+
         var block = getWordBlock(i, lastBlockDataLength);
-        
-        // If there is no room for the message size in this block, 
+
+        // If there is no room for the message size in this block,
         // return the block and put the size in the following block.
         if (lastBlockDataLength + MESSAGE_LENGTH_SIZE_BYTES > BLOCK_SIZE_BYTES) {
             // Message size goes in next block
@@ -209,10 +252,10 @@ function sha1(message) {
     function rotl(value, shift) {
         return (value << shift) | (value >>> (32 - shift));
     }
-    
+
     /**
      * Computes a SHA1 hash for the specified array of 64 byte blocks.
-     * @param {Number[][]} blocks 
+     * @param {Number[][]} blocks
      */
     function computeHash(blocks) {
         var a = 0x67452301,
@@ -233,13 +276,13 @@ function sha1(message) {
                 var f =
                     // Ch
                     t < 20 ? ((b & c) ^ ((~b) & d)) + 0x5a827999 :
-                    
+
                     // Parity
                     t < 40 ? (b ^ c ^ d) + 0x6ed9eba1 :
-                    
+
                     // Maj
                     t < 60 ? ((b & c) ^ (b & d) ^ (c & d)) + 0x8f1bbcdc :
-                    
+
                     // Parity
                     (b ^ c ^ d) + 0xca62c1d6;
 
@@ -267,49 +310,6 @@ function sha1(message) {
 
 
 
-/**
- * Renderer producing SVG output.
- * @private
- * @constructor
- */
-function SvgWriter(size) {
-    this.size = size;
-    this._s =
-        '<svg xmlns="http://www.w3.org/2000/svg" width="' + 
-        size + '" height="' + size + '" viewBox="0 0 ' + 
-        size + ' ' + size + '" preserveAspectRatio="xMidYMid meet">';
-}
-SvgWriter.prototype = {
-    /**
-     * Fills the background with the specified color.
-     * @param {string} fillColor  Fill color on the format #rrggbb.
-     * @param {number} opacity  Opacity in the range [0.0, 1.0].
-     */
-    setBackground: function (fillColor, opacity) {
-        if (opacity) {
-            this._s += '<rect width="100%" height="100%" fill="' + 
-                fillColor + '" opacity="' + opacity.toFixed(2) + '"/>';
-        }
-    },
-    /**
-     * Writes a path to the SVG string.
-     * @param {string} color Fill color on format #rrggbb.
-     * @param {string} dataString The SVG path data string.
-     */
-    append: function (color, dataString) {
-        this._s += 
-            '<path fill="' + color + '" d="' + dataString + '"/>';
-    },
-    /**
-     * Gets the rendered image as an SVG string.
-     */
-    toString: function () {
-        return this._s + "</svg>";
-    }
-};
-
-
-
 function decToHex(v) {
     v |= 0; // Ensure integer value
     return v < 0 ? "00" :
@@ -326,7 +326,7 @@ function hueToRgb(m1, m2, h) {
         h < 4 ? m1 + (m2 - m1) * (4 - h) :
         m1));
 }
-    
+
 /**
  * Functions for converting colors to hex-rgb representations.
  * @private
@@ -395,11 +395,31 @@ var color = {
         // The corrector specifies the perceived middle lightnesses for each hue
         var correctors = [ 0.55, 0.5, 0.5, 0.46, 0.6, 0.55, 0.55 ],
             corrector = correctors[(h * 6 + 0.5) | 0];
-        
+
         // Adjust the input lightness relative to the corrector
         l = l < 0.5 ? l * corrector * 2 : corrector + (l - 0.5) * (1 - corrector) * 2;
-        
+
         return color.hsl(h, s, l);
+    },
+    shadeBlendConvert: function (p, from, to) {
+        if(typeof(p)!="number"||p<-1||p>1||typeof(from)!="string"||(from[0]!='r'&&from[0]!='#')||(to&&typeof(to)!="string"))return null; //ErrorCheck
+        if(!this.sbcRip)this.sbcRip=(d)=>{
+            let l=d.length,RGB={};
+            if(l>9){
+                d=d.split(",");
+                if(d.length<3||d.length>4)return null;//ErrorCheck
+                RGB[0]=i(d[0].split("(")[1]),RGB[1]=i(d[1]),RGB[2]=i(d[2]),RGB[3]=d[3]?parseFloat(d[3]):-1;
+            }else{
+                if(l==8||l==6||l<4)return null; //ErrorCheck
+                if(l<6)d="#"+d[1]+d[1]+d[2]+d[2]+d[3]+d[3]+(l>4?d[4]+""+d[4]:""); //3 or 4 digit
+                d=i(d.slice(1),16),RGB[0]=d>>16&255,RGB[1]=d>>8&255,RGB[2]=d&255,RGB[3]=-1;
+                if(l==9||l==5)RGB[3]=r((RGB[2]/255)*10000)/10000,RGB[2]=RGB[1],RGB[1]=RGB[0],RGB[0]=d>>24&255;
+            }
+        return RGB;}
+        var i=parseInt,r=Math.round,h=from.length>9,h=typeof(to)=="string"?to.length>9?true:to=="c"?!h:false:h,b=p<0,p=b?p*-1:p,to=to&&to!="c"?to:b?"#000000":"#FFFFFF",f=this.sbcRip(from),t=this.sbcRip(to);
+        if(!f||!t)return null; //ErrorCheck
+        if(h)return "rgb"+(f[3]>-1||t[3]>-1?"a(":"(")+r((t[0]-f[0])*p+f[0])+","+r((t[1]-f[1])*p+f[1])+","+r((t[2]-f[2])*p+f[2])+(f[3]<0&&t[3]<0?")":","+(f[3]>-1&&t[3]>-1?r(((t[3]-f[3])*p+f[3])*10000)/10000:t[3]<0?f[3]:t[3])+")");
+        else return "#"+(0x100000000+r((t[0]-f[0])*p+f[0])*0x1000000+r((t[1]-f[1])*p+f[1])*0x10000+r((t[2]-f[2])*p+f[2])*0x100+(f[3]>-1&&t[3]>-1?r(((t[3]-f[3])*p+f[3])*255):t[3]>-1?r(t[3]*255):f[3]>-1?r(f[3]*255):255)).toString(16).slice(1,f[3]>-1||t[3]>-1?undefined:-2);
     }
 };
 
@@ -414,22 +434,22 @@ var color = {
 function CanvasRenderer(ctx, size) {
     var width = ctx.canvas.width,
         height = ctx.canvas.height;
-    
+
     ctx.save();
-    
+
     this._ctx = ctx;
-    
+
     if (size) {
         this.size = size;
     }
     else {
         this.size = Math.min(width, height);
-        
+
         ctx.translate(
             ((width - this.size) / 2) | 0,
             ((height - this.size) / 2) | 0);
     }
-    
+
     ctx.clearRect(0, 0, this.size, this.size);
 }
 CanvasRenderer.prototype = {
@@ -440,7 +460,7 @@ CanvasRenderer.prototype = {
     setBackground: function (fillColor) {
         var ctx = this._ctx,
             size = this.size;
-                
+
         ctx.fillStyle = color.toCss3(fillColor);
         ctx.fillRect(0, 0, size, size);
     },
@@ -493,6 +513,151 @@ CanvasRenderer.prototype = {
 
 
 
+var shapes = {
+    center: [
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var k = cell * 0.42;
+            g.addPolygon([
+                0, 0,
+                cell, 0,
+                cell, cell - k * 2,
+                cell - k, cell,
+                0, cell
+            ]);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var w = 0 | (cell * 0.5),
+                h = 0 | (cell * 0.8);
+            g.addTriangle(cell - w, 0, w, h, 2);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var s = 0 | (cell / 3);
+            g.addRectangle(s, s, cell - s, cell - s);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var inner = cell * 0.1,
+                inner =
+                    inner > 1 ? (0 | inner) : // large icon => truncate decimals
+                    inner > 0.5 ? 1 :         // medium size icon => fixed width
+                    inner,                    // small icon => anti-aliased border
+
+                // Use fixed outer border widths in small icons to ensure the border is drawn
+                outer =
+                    cell < 6 ? 1 :
+                    cell < 8 ? 2 :
+                    (0 | (cell * 0.25));
+
+            g.addRectangle(outer, outer, cell - inner - outer, cell - inner - outer);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var m = 0 | (cell * 0.15),
+                s = 0 | (cell * 0.5);
+            g.addCircle(cell - s - m, cell - s - m, s);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var inner = cell * 0.1,
+                outer = inner * 4;
+
+            g.addRectangle(0, 0, cell, cell);
+            g.addPolygon([
+                outer, 0 | outer,
+                cell - inner, 0 | outer,
+                outer + (cell - outer - inner) / 2, cell - inner
+            ], true);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            g.addPolygon([
+                0, 0,
+                cell, 0,
+                cell, cell * 0.7,
+                cell * 0.4, cell * 0.4,
+                cell * 0.7, cell,
+                0, cell
+            ]);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            g.addTriangle(cell / 2, cell / 2, cell / 2, cell / 2, 3);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            g.addRectangle(0, 0, cell, cell / 2);
+            g.addRectangle(0, cell / 2, cell / 2, cell / 2);
+            g.addTriangle(cell / 2, cell / 2, cell / 2, cell / 2, 1);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var inner = cell * 0.14,
+                inner =
+                    cell < 8 ? inner : // small icon => anti-aliased border
+                    (0 | inner),       // large icon => truncate decimals
+
+                // Use fixed outer border widths in small icons to ensure the border is drawn
+                outer =
+                    cell < 4 ? 1 :
+                    cell < 6 ? 2 :
+                    (0 | (cell * 0.35));
+
+            g.addRectangle(0, 0, cell, cell);
+            g.addRectangle(outer, outer, cell - outer - inner, cell - outer - inner, true);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var inner = cell * 0.12,
+                outer = inner * 3;
+
+            g.addRectangle(0, 0, cell, cell);
+            g.addCircle(outer, outer, cell - inner - outer, true);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            g.addTriangle(cell / 2, cell / 2, cell / 2, cell / 2, 3);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var m = cell * 0.25;
+            g.addRectangle(0, 0, cell, cell);
+            g.addRhombus(m, m, cell - m, cell - m, true);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var m = cell * 0.4, s = cell * 1.2;
+            if (!index) {
+                g.addCircle(m, m, s);
+            }
+        }
+    ],
+
+    outer: [
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            g.addTriangle(0, 0, cell, cell, 0);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            g.addTriangle(0, cell / 2, cell, cell / 2, 0);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            g.addRhombus(0, 0, cell, cell);
+        },
+        /** @param {Graphics} g */
+        function (g, cell, index) {
+            var m = cell / 6;
+            g.addCircle(m, m, cell - 2 * m);
+        }
+    ]
+};
+
+
+
 /**
  * Prepares a measure to be used as a measure in an SVG path, by
  * rounding the measure to a single decimal. This reduces the file
@@ -535,10 +700,10 @@ SvgPath.prototype = {
         var sweepFlag = counterClockwise ? 0 : 1,
             svgRadius = svgValue(diameter / 2),
             svgDiameter = svgValue(diameter);
-            
-        this.dataString += 
+
+        this.dataString +=
             "M" + svgValue(point.x) + " " + svgValue(point.y + diameter / 2) +
-            "a" + svgRadius + "," + svgRadius + " 0 1," + sweepFlag + " " + svgDiameter + ",0" + 
+            "a" + svgRadius + "," + svgRadius + " 0 1," + sweepFlag + " " + svgDiameter + ",0" +
             "a" + svgRadius + "," + svgRadius + " 0 1," + sweepFlag + " " + (-svgDiameter) + ",0";
     }
 };
@@ -550,7 +715,7 @@ SvgPath.prototype = {
  * Renderer producing SVG output.
  * @private
  * @constructor
- * @param {SvgElement|SvgWriter} target 
+ * @param {SvgElement|SvgWriter} target
  */
 function SvgRenderer(target) {
     this._pathsByColor = { };
@@ -597,156 +762,11 @@ SvgRenderer.prototype = {
     /**
      * Called when the icon has been completely drawn.
      */
-    finish: function () { 
+    finish: function () {
         for (var color in this._pathsByColor) {
             this._target.append(color, this._pathsByColor[color].dataString);
         }
     }
-};
-
-
-
-var shapes = {
-    center: [
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            var k = cell * 0.42;
-            g.addPolygon([
-                0, 0,
-                cell, 0,
-                cell, cell - k * 2,
-                cell - k, cell,
-                0, cell
-            ]);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            var w = 0 | (cell * 0.5), 
-                h = 0 | (cell * 0.8);
-            g.addTriangle(cell - w, 0, w, h, 2);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) { 
-            var s = 0 | (cell / 3);
-            g.addRectangle(s, s, cell - s, cell - s);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) { 
-            var inner = cell * 0.1,
-                inner = 
-                    inner > 1 ? (0 | inner) : // large icon => truncate decimals
-                    inner > 0.5 ? 1 :         // medium size icon => fixed width
-                    inner,                    // small icon => anti-aliased border
-                
-                // Use fixed outer border widths in small icons to ensure the border is drawn
-                outer = 
-                    cell < 6 ? 1 :
-                    cell < 8 ? 2 :
-                    (0 | (cell * 0.25));
-            
-            g.addRectangle(outer, outer, cell - inner - outer, cell - inner - outer);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) { 
-            var m = 0 | (cell * 0.15),
-                s = 0 | (cell * 0.5);
-            g.addCircle(cell - s - m, cell - s - m, s);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            var inner = cell * 0.1,
-                outer = inner * 4;
-
-            g.addRectangle(0, 0, cell, cell);
-            g.addPolygon([
-                outer, 0 | outer,
-                cell - inner, 0 | outer,
-                outer + (cell - outer - inner) / 2, cell - inner
-            ], true);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            g.addPolygon([
-                0, 0,
-                cell, 0,
-                cell, cell * 0.7,
-                cell * 0.4, cell * 0.4,
-                cell * 0.7, cell,
-                0, cell
-            ]);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            g.addTriangle(cell / 2, cell / 2, cell / 2, cell / 2, 3);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            g.addRectangle(0, 0, cell, cell / 2);
-            g.addRectangle(0, cell / 2, cell / 2, cell / 2);
-            g.addTriangle(cell / 2, cell / 2, cell / 2, cell / 2, 1);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            var inner = cell * 0.14,
-                inner = 
-                    cell < 8 ? inner : // small icon => anti-aliased border
-                    (0 | inner),       // large icon => truncate decimals
-                
-                // Use fixed outer border widths in small icons to ensure the border is drawn
-                outer = 
-                    cell < 4 ? 1 :
-                    cell < 6 ? 2 :
-                    (0 | (cell * 0.35));
-                    
-            g.addRectangle(0, 0, cell, cell);
-            g.addRectangle(outer, outer, cell - outer - inner, cell - outer - inner, true);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            var inner = cell * 0.12,
-                outer = inner * 3;
-
-            g.addRectangle(0, 0, cell, cell);
-            g.addCircle(outer, outer, cell - inner - outer, true);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            g.addTriangle(cell / 2, cell / 2, cell / 2, cell / 2, 3);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            var m = cell * 0.25;
-            g.addRectangle(0, 0, cell, cell);
-            g.addRhombus(m, m, cell - m, cell - m, true);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            var m = cell * 0.4, s = cell * 1.2;
-            if (!index) {
-                g.addCircle(m, m, s);
-            }
-        }
-    ],
-    
-    outer: [
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            g.addTriangle(0, 0, cell, cell, 0);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            g.addTriangle(0, cell / 2, cell, cell / 2, 0);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            g.addRhombus(0, 0, cell, cell);
-        },
-        /** @param {Graphics} g */
-        function (g, cell, index) {
-            var m = cell / 6;
-            g.addCircle(m, m, cell - 2 * m);
-        }
-    ]
 };
 
 
@@ -768,18 +788,18 @@ Graphics.prototype = {
      * @param {boolean=} invert Specifies if the polygon will be inverted.
      */
     addPolygon: function (points, invert) {
-        var di = invert ? -2 : 2, 
+        var di = invert ? -2 : 2,
             transform = this._transform,
             transformedPoints = [],
             i;
-        
+
         for (i = invert ? points.length - 2 : 0; i < points.length && i >= 0; i += di) {
             transformedPoints.push(transform.transformPoint(points[i], points[i + 1]));
         }
-        
+
         this._renderer.addPolygon(transformedPoints);
     },
-    
+
     /**
      * Adds a polygon to the underlying renderer.
      * Source: http://stackoverflow.com/a/2173084
@@ -803,7 +823,7 @@ Graphics.prototype = {
      */
     addRectangle: function (x, y, w, h, invert) {
         this.addPolygon([
-            x, y, 
+            x, y,
             x + w, y,
             x + w, y + h,
             x, y + h
@@ -821,8 +841,8 @@ Graphics.prototype = {
      */
     addTriangle: function (x, y, w, h, r, invert) {
         var points = [
-            x + w, y, 
-            x + w, y + h, 
+            x + w, y,
+            x + w, y + h,
             x, y + h,
             x, y
         ];
@@ -855,18 +875,18 @@ Graphics.prototype = {
  * Gets a set of identicon color candidates for a specified hue and config.
  */
 function colorTheme(hue, config) {
-    return [
-        // Dark gray
-        color.hsl(0, 0, config.grayscaleLightness(0)),
-        // Mid color
-        color.correctedHsl(hue, config.saturation, config.colorLightness(0.5)),
-        // Light gray
-        color.hsl(0, 0, config.grayscaleLightness(1)),
-        // Light color
-        color.correctedHsl(hue, config.saturation, config.colorLightness(1)),
-        // Dark color
-        color.correctedHsl(hue, config.saturation, config.colorLightness(0))
-    ];
+        return [
+            // Dark gray
+            color.hsl(0, 0, config.grayscaleLightness(0)),
+            // Mid color
+            config.mainColor ? config.mainColor : color.correctedHsl(hue, config.saturation, config.colorLightness(0.5)),
+            // Light gray
+            color.hsl(0, 0, config.grayscaleLightness(1)),
+            // Light color
+            config.mainColor ? color.shadeBlendConvert(config.colorLightness(1), config.mainColor) : color.correctedHsl(hue, config.saturation, config.colorLightness(1)),
+            // Dark color
+            config.mainColor ? color.shadeBlendConvert((config.colorLightness(0))*-1, config.mainColor) : color.correctedHsl(hue, config.saturation, config.colorLightness(0))
+        ];
 }
 
 
@@ -885,7 +905,7 @@ function Point(x, y) {
 
 
 /**
- * Translates and rotates a point before being passed on to the canvas context. This was previously done by the canvas context itself, 
+ * Translates and rotates a point before being passed on to the canvas context. This was previously done by the canvas context itself,
  * but this caused a rendering issue in Chrome on sizes > 256 where the rotation transformation of inverted paths was not done properly.
  * @param {number} x The x-coordinate of the upper left corner of the transformed rectangle.
  * @param {number} y The y-coordinate of the upper left corner of the transformed rectangle.
@@ -921,27 +941,27 @@ Transform.noTransform = new Transform(0, 0, 0, 0);
 
 
 
-     
+
 /**
  * Draws an identicon to a specified renderer.
  */
 function iconGenerator(renderer, hash, x, y, size, padding, config) {
     var undefined;
-    
+
     // Set background color
     if (config.backColor) {
         renderer.setBackground(config.backColor);
     }
-    
+
     // Calculate padding
     padding = (size * (padding === undefined ? 0.08 : padding)) | 0;
     size -= padding * 2;
-    
+
     var graphics = new Graphics(renderer);
-    
+
     // Calculate cell size and ensure it is an integer
     var cell = 0 | (size / 4);
-    
+
     // Since the cell size is integer based, the actual icon will be slightly smaller than specified => center icon
     x += 0 | (padding + size / 2 - cell * 2);
     y += 0 | (padding + size / 2 - cell * 2);
@@ -950,20 +970,20 @@ function iconGenerator(renderer, hash, x, y, size, padding, config) {
         var r = rotationIndex ? parseInt(hash.charAt(rotationIndex), 16) : 0,
             shape = shapes[parseInt(hash.charAt(index), 16) % shapes.length],
             i;
-        
+
         renderer.beginShape(availableColors[selectedColorIndexes[colorIndex]]);
-        
+
         for (i = 0; i < positions.length; i++) {
             graphics._transform = new Transform(x + positions[i][0] * cell, y + positions[i][1] * cell, cell, r++ % 4);
             shape(graphics, cell, i);
         }
-        
+
         renderer.endShape();
     }
 
     // AVAILABLE COLORS
     var hue = parseInt(hash.substr(-7), 16) / 0xfffffff,
-    
+
         // Available colors for this icon
         availableColors = colorTheme(hue, config),
 
@@ -997,13 +1017,13 @@ function iconGenerator(renderer, hash, x, y, size, padding, config) {
     renderShape(1, shapes.outer, 4, 5, [[0, 0], [3, 0], [3, 3], [0, 3]]);
     // Center
     renderShape(2, shapes.center, 1, null, [[1, 1], [2, 1], [2, 2], [1, 2]]);
-    
+
     renderer.finish();
 };
 
 
 
- 
+
 
 
 var /** @const */
@@ -1018,14 +1038,15 @@ function getCurrentConfig() {
     var configObject = jdenticon["config"] || global["jdenticon_config"] || { },
         lightnessConfig = configObject["lightness"] || { },
         saturation = configObject["saturation"],
+        mainColor = configObject["mainColor"] || false,
         backColor = configObject["backColor"];
-    
+
     /**
      * Creates a lightness range.
      */
     function lightness(configName, defaultMin, defaultMax) {
         var range = lightnessConfig[configName] instanceof Array ? lightnessConfig[configName] : [defaultMin, defaultMax];
-        
+
         /**
          * Gets a lightness relative the specified value in the specified lightness range.
          */
@@ -1034,17 +1055,18 @@ function getCurrentConfig() {
             return value < 0 ? 0 : value > 1 ? 1 : value;
         };
     }
-        
+
     return {
         saturation: typeof saturation == "number" ? saturation : 0.5,
         colorLightness: lightness("color", 0.4, 0.8),
         grayscaleLightness: lightness("grayscale", 0.3, 0.9),
+        mainColor: "#1cabbb",
         backColor: color.parse(backColor)
     }
 }
 
 /**
- * Inputs a value that might be a valid hash string for Jdenticon and returns it 
+ * Inputs a value that might be a valid hash string for Jdenticon and returns it
  * if it is determined valid, otherwise a falsy value is returned.
  */
 function getValidHash(hashCandidate) {
@@ -1079,43 +1101,43 @@ function update(el, hash, padding) {
         // No element found
         return;
     }
-    
+
     var isSvg = /svg/i.test(el["tagName"]),
         isCanvas = /canvas/i.test(el["tagName"]);
-    
+
     // Ensure we have a supported element
     if (!isSvg && !(isCanvas && "getContext" in el)) {
         return;
     }
-    
-    // Hash selection. The result from getValidHash or computeHash is 
+
+    // Hash selection. The result from getValidHash or computeHash is
     // accepted as a valid hash.
-    hash = 
+    hash =
         // 1. Explicit valid hash
         getValidHash(hash) ||
-        
+
         // 2. Explicit value
         hash && computeHash(hash) ||
-        
+
         // 3. `data-jdenticon-hash` attribute
         getValidHash(el.getAttribute(HASH_ATTRIBUTE)) ||
-        
-        // 4. `data-jdenticon-value` attribute. 
-        // We want to treat an empty attribute as an empty value. 
-        // Some browsers return empty string even if the attribute 
-        // is not specified, so use hasAttribute to determine if 
+
+        // 4. `data-jdenticon-value` attribute.
+        // We want to treat an empty attribute as an empty value.
+        // Some browsers return empty string even if the attribute
+        // is not specified, so use hasAttribute to determine if
         // the attribute is specified.
         el.hasAttribute(VALUE_ATTRIBUTE) && computeHash(el.getAttribute(VALUE_ATTRIBUTE));
-    
+
     if (!hash) {
         // No hash specified. Don't render an icon.
         return;
     }
-    
-    var renderer = isSvg ? 
-        new SvgRenderer(new SvgElement(el)) : 
+
+    var renderer = isSvg ?
+        new SvgRenderer(new SvgElement(el)) :
         new CanvasRenderer(el.getContext("2d"));
-    
+
     // Draw icon
     iconGenerator(renderer, hash, 0, 0, renderer.size, padding, getCurrentConfig());
 }
@@ -1130,10 +1152,10 @@ function drawIcon(ctx, hashOrValue, size, padding) {
     if (!ctx) {
         throw new Error("No canvas specified.");
     }
-    
+
     var renderer = new CanvasRenderer(ctx, size);
-    iconGenerator(renderer, 
-        getValidHash(hashOrValue) || computeHash(hashOrValue), 
+    iconGenerator(renderer,
+        getValidHash(hashOrValue) || computeHash(hashOrValue),
         0, 0, size, padding || 0, getCurrentConfig());
 }
 
@@ -1147,7 +1169,7 @@ function drawIcon(ctx, hashOrValue, size, padding) {
 function toSvg(hashOrValue, size, padding) {
     var writer = new SvgWriter(size);
     var renderer = new SvgRenderer(writer);
-    iconGenerator(renderer, 
+    iconGenerator(renderer,
         getValidHash(hashOrValue) || computeHash(hashOrValue),
         0, 0, size, padding, getCurrentConfig());
     return writer.toString();
