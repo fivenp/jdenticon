@@ -2,6 +2,7 @@
 JavaScript library for generating highly recognizable identicons using HTML5 canvas or SVG.
 
 This fork enables you to (optionally) pass a mainColor which is then lightened/darkened to create an identicon. 
+
 We're using PimpTrizkit`s gorgeous [Shade Blend and Convert](https://github.com/PimpTrizkit/PJs/wiki/12.-Shade,-Blend-and-Convert-a-Web-Color-(pSBC.js)) funtion to blend the mainColor. Since it's GPL licensed we had to adapt this license accordingly.
 
 ![Sample identicons](sample.png)
