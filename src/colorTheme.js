@@ -13,11 +13,11 @@ const color = require("./color");
 function colorTheme(hue, config) {
     return [
         // Dark gray
-        color.hsl(0, 0, config.grayscaleLightness(0)),
+        config.opaqueGrayscale ? "#000000"+parseInt((config.grayscaleLightness(0)*100)).toString(16) : color.hsl(0, 0, config.grayscaleLightness(0)),
         // Mid color
         config.mainColor ? config.mainColor : color.correctedHsl(hue, config.saturation, config.colorLightness(0.5)),
         // Light gray
-        color.hsl(0, 0, config.grayscaleLightness(1)),
+        config.opaqueGrayscale ? "#ffffff"+parseInt((config.grayscaleLightness(1)*100)).toString(16) : color.hsl(0, 0, config.grayscaleLightness(1)),
         // Light color
         config.mainColor ? color.shadeBlendConvert(config.colorLightness(1), config.mainColor) : color.correctedHsl(hue, config.saturation, config.colorLightness(1)),
         // Dark color

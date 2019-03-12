@@ -32,6 +32,7 @@ function getCurrentConfig() {
     var configObject = jdenticon["config"] || global["jdenticon_config"] || { },
         lightnessConfig = configObject["lightness"] || { },
         saturation = configObject["saturation"],
+        opaqueGrayscale = configObject["opaqueGrayscale"] || false,
         mainColor = configObject["mainColor"] || false,
         backColor = configObject["backColor"];
 
@@ -54,6 +55,7 @@ function getCurrentConfig() {
         saturation: typeof saturation == "number" ? saturation : 0.5,
         colorLightness: lightness("color", 0.4, 0.8),
         grayscaleLightness: lightness("grayscale", 0.3, 0.9),
+        opaqueGrayscale: opaqueGrayscale,
         mainColor: mainColor,
         backColor: color.parse(backColor)
     }
